@@ -18,8 +18,10 @@ import paramiko #to execute ssh
 usrname='macman'
 pswd='passSYSBIO'
 
+# Test data set provided?
+test_set_provided = True
 
-dirShared ="/home/macman/isotonic_regression/GSE19491_tuberculosis_train_393/" #directory for your analysis
+dirShared ="/home/macman/anaconda3/INTERNSHIP/GSE19491_tuberculosis_train_10/" #directory for your analysis
 
 
 dirIsotonInputs = dirShared + "data/"
@@ -228,25 +230,29 @@ fAnnotOutRealOnce=dirIsotonOutputs+nameftranscripts+"_isotonResult_annot.txt"
 ###Making files for cv test set: leaving 1 element out in turn
 
 assert (len(dftranscripts.columns) == nCases+nControls), "nCases + nControls doesn't correspont to the length of columns of dftranscripts. "
-makeCvFilesLeaveOneOut (dftranscripts, dfphenotypes,dirIsotonInputs+relativePathTestSetCv, SuffixFCvTestSet,PrefixFCvSet,PrefixFPhenoCvSet)
+if test_set_provided == False:
+    makeCvFilesLeaveOneOut (dftranscripts, dfphenotypes,dirIsotonInputs+relativePathTestSetCv, SuffixFCvTestSet,PrefixFCvSet,PrefixFPhenoCvSet)
 
 print("files for cv test set generated")
-"""
+
 ####Making files for internal cv (to determine k): leaving 1 element out in turn for each of the previous cvs
+if test_set_provided == False:
+    patternCvTestSetInput=dirIsotonInputs+relativePathTestSetCv+PrefixFCvSet+"*"+SuffixFCvTestSet+".txt"
 
-patternCvTestSetInput=dirIsotonInputs+relativePathTestSetCv+PrefixFCvSet+"*"+SuffixFCvTestSet+".txt"
-
-for j in range(0,len(glob.glob(patternCvTestSetInput))):
-    fCvTestSetInput=dirIsotonInputs+relativePathTestSetCv+PrefixFCvSet+str(j)+SuffixFCvTestSet+".txt"
+    for j in range(0,len(glob.glob(patternCvTestSetInput))):
+        fCvTestSetInput=dirIsotonInputs+relativePathTestSetCv+PrefixFCvSet+str(j)+SuffixFCvTestSet+".txt"
     
-    fCvTestSetPhenoInput=dirIsotonInputs+relativePathTestSetCv+PrefixFPhenoCvSet+str(j)+SuffixFCvTestSet+".txt"
-    dfCvTestSetInput=pd.read_csv(fCvTestSetInput, sep="\t", index_col=0)
-    dfCvTestSetPhenoInput=pd.read_csv(fCvTestSetPhenoInput,skiprows=1, names=["Phenotype"])
-    prefixExprIntCv=PrefixFCvSet+str(j)+SuffixFCvTestSet+"_"
-    prefixPhenoIntCv=PrefixFPhenoCvSet+str(j)+SuffixFCvTestSet+"_"
+        fCvTestSetPhenoInput=dirIsotonInputs+relativePathTestSetCv+PrefixFPhenoCvSet+str(j)+SuffixFCvTestSet+".txt"
+        dfCvTestSetInput=pd.read_csv(fCvTestSetInput, sep="\t", index_col=0)
+        dfCvTestSetPhenoInput=pd.read_csv(fCvTestSetPhenoInput,skiprows=1, names=["Phenotype"])
+        prefixExprIntCv=PrefixFCvSet+str(j)+SuffixFCvTestSet+"_"
+        prefixPhenoIntCv=PrefixFPhenoCvSet+str(j)+SuffixFCvTestSet+"_"
     
-    makeCvFilesLeaveThreeOut (dfCvTestSetInput, dfCvTestSetPhenoInput,dirIsotonInputs+relativePathIntSetCv, SuffixFCvIntSet,prefixExprIntCv,prefixPhenoIntCv, lim)
-    print (j)
+        makeCvFilesLeaveThreeOut (dfCvTestSetInput, dfCvTestSetPhenoInput,dirIsotonInputs+relativePathIntSetCv, SuffixFCvIntSet,prefixExprIntCv,prefixPhenoIntCv, lim)
+        print (j)
+        
+else:
+    makeCvFilesLeaveOneOut (dftranscripts, dfphenotypes,dirIsotonInputs+relativePathIntSetCv, SuffixFCvIntSet,PrefixFCvSet,PrefixFPhenoCvSet)
 
 
    
@@ -259,11 +265,14 @@ for j in range(0,len(glob.glob(patternCvTestSetInput))):
 if not os.path.exists(dirIsotonInputs+relativePathReal):
         os.makedirs(dirIsotonInputs+relativePathReal)
 
-
-makeCvFilesLeaveThreeOut (dftranscripts, dfphenotypes, dirIsotonInputs+relativePathCvIntReal, SuffixFCvIntSet,PrefixFCvSet,PrefixFPhenoCvSet,lim)
-
-
-
+if test_set_provided == False:
+    makeCvFilesLeaveThreeOut (dftranscripts, dfphenotypes, dirIsotonInputs+relativePathCvIntReal, SuffixFCvIntSet,PrefixFCvSet,PrefixFPhenoCvSet,lim)
+else:
+    if not os.path.exists(dirIsotonInputs+relativePathCvIntReal):
+        os.makedirs(dirIsotonInputs+relativePathCvIntReal)
+    dftranscripts.to_csv(dirIsotonInputs+relativePathCvIntReal+PrefixFCvSet+"0"+SuffixFCvIntSet+".txt", float_format='%.0f', index=False, sep="\t")
+    dfphenotypes.to_csv(dirIsotonInputs+relativePathCvIntReal+PrefixFPhenoCvSet+"0"+SuffixFCvIntSet+".txt", float_format='%.0f', index=False, sep="\t")
+"""
 call([mathematica, '-script', binarize, dirIsotonInputs+relativePathCvIntReal,PrefixFCvSet+"*"+".txt" ])
 
 call([mathematica, '-script', binarize, dirIsotonInputs,nameftranscripts ])
@@ -280,7 +289,10 @@ call([mathematica, '-script', binarize, dirIsotonInputs,nameftranscripts ])
 # 
 #
 call([mathematica, '-script', binarize, dirCvIntSet,PrefixFCvSet+"*"+".txt" ])
-call([mathematica, '-script', binarize, dirCvTestSet,PrefixFCvSet+"*"+".txt" ]) 
+if test_set_provided == False:
+    call([mathematica, '-script', binarize, dirCvTestSet,PrefixFCvSet+"*"+".txt" ])
+else:
+    call([mathematica, '-script', binarize, dirCvTestSet,"*.txt" ])
 #
 #
 #
@@ -492,6 +504,6 @@ dfToBeFixed=pd.concat([dfOutRealOnce.ix[0:(k-1),2], dfOutRealOnce.ix[0:(k-1),3]]
 
 dfToBeFixed.to_csv(dirIsotonOutputs+"ToBeFixed.txt", index=False)
 
-"""
 
-   
+
+"""   
