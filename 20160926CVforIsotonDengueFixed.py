@@ -21,7 +21,7 @@ pswd='passSYSBIO'
 # Test data set provided?
 test_set_provided = True
 
-dirShared ="/home/macman/anaconda3/INTERNSHIP/GSE19491_tuberculosis_train_10/" #directory for your analysis
+dirShared ="/home/macman/isotonic_regression/GSE19491_tuberculosis_train_10/" #directory for your analysis
 
 
 dirIsotonInputs = dirShared + "data/"
@@ -270,8 +270,8 @@ if test_set_provided == False:
 else:
     if not os.path.exists(dirIsotonInputs+relativePathCvIntReal):
         os.makedirs(dirIsotonInputs+relativePathCvIntReal)
-    dftranscripts.to_csv(dirIsotonInputs+relativePathCvIntReal+PrefixFCvSet+"0"+SuffixFCvIntSet+".txt", float_format='%.0f', index=False, sep="\t")
-    dfphenotypes.to_csv(dirIsotonInputs+relativePathCvIntReal+PrefixFPhenoCvSet+"0"+SuffixFCvIntSet+".txt", float_format='%.0f', index=False, sep="\t")
+    dftranscripts.to_csv(dirIsotonInputs+relativePathCvIntReal+PrefixFCvSet+"complete"+SuffixFCvIntSet+".txt", float_format='%.0f', index=False, sep="\t")
+    dfphenotypes.to_csv(dirIsotonInputs+relativePathCvIntReal+PrefixFPhenoCvSet+"complete"+SuffixFCvIntSet+".txt", float_format='%.0f', index=False, sep="\t")
 """
 call([mathematica, '-script', binarize, dirIsotonInputs+relativePathCvIntReal,PrefixFCvSet+"*"+".txt" ])
 
