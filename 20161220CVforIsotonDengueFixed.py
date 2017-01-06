@@ -12,22 +12,26 @@ import numpy as np
 from subprocess import call
 import math
 import paramiko #to execute ssh
+from shutil import copyfile
 
 #### this script requires transcripts/features file with lines=features columns=patients. A phenotype file with 2 phenotypes coded 1 and 0. 
 
 usrname='macman'
-pswd='passSYSBIO'
+pswd='SH0rts3NT3Nc3'
 
 # Test data set provided?
-test_set_provided = True
+test_set_provided = True 
 
 dirShared ="/home/macman/isotonic_regression/GSE19491_tuberculosis_train_10/" #directory for your analysis
 
 
 dirIsotonInputs = dirShared + "data/"
-patternTranscripts=dirIsotonInputs+"*EXPRESSION*.txt"
-patternPhenotypes=dirIsotonInputs+"*PHENOTYPE*"
-
+if test_set_provided == False:
+    patternTranscripts=dirIsotonInputs+"*EXPRESSION*.txt"
+    patternPhenotypes=dirIsotonInputs+"*PHENOTYPE*"    
+if test_set_provided == True:
+    patternTranscripts=dirIsotonInputs+"*EXPRESSION*train*.txt"
+    patternPhenotypes=dirIsotonInputs+"*PHENOTYPE*train*"
 
 
 #fannot = "/home/iryna/isotonic_regression/Dengue/HTA-2_0_probeset_annotations.txt"
@@ -150,21 +154,18 @@ def createScriptFile(fScript, nFeatures, dirIsotonOutputs, relativePathSetCv, Pr
     
 
 
-
-
-def runScriptFileOnSpice(usrname,pswd,fScript):
-
-###ssh spice and submit to queue the fScript file analysis
+def runScriptUsingSSH(usrname,pswd, machine, commandToLaunchScript):
+    ###ssh spice and submit to queue the fScript file analysis
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect('spice', username = usrname , password = pswd)
-    
-    
-    
+    ssh.connect(machine, username = usrname , password = pswd)
+
+
+
     #With -sync -y , I'm waiting for all jobs to end before the command finishes.
-    
-    stdin, stdout, stderr= ssh.exec_command('source /etc/profile; qsub -sync y '+fScript)
+
+    stdin, stdout, stderr= ssh.exec_command(commandToLaunchScript)
     exit_status = stdout.channel.recv_exit_status()
     stdout_output = stdout.read().decode('utf8').rstrip('\n')
     print ("Stdout: ", stdout_output)
@@ -172,6 +173,9 @@ def runScriptFileOnSpice(usrname,pswd,fScript):
     print ("Stderr: ", stderr_output)
     assert (exit_status == 0), "While executing "+fScript+", qsub generated the non-zero exit status: "+str(exit_status)
     return exit_status
+
+def runScriptFileOnSpice(usrname,pswd,fScript):
+    return runScriptUsingSSH(usrname,pswd, 'spice', 'source /etc/profile; qsub -sync y '+fScript)
 
 
 
@@ -249,7 +253,6 @@ if test_set_provided == False:
         prefixPhenoIntCv=PrefixFPhenoCvSet+str(j)+SuffixFCvTestSet+"_"
     
         makeCvFilesLeaveThreeOut (dfCvTestSetInput, dfCvTestSetPhenoInput,dirIsotonInputs+relativePathIntSetCv, SuffixFCvIntSet,prefixExprIntCv,prefixPhenoIntCv, lim)
-        print (j)
         
 else:
     makeCvFilesLeaveOneOut (dftranscripts, dfphenotypes,dirIsotonInputs+relativePathIntSetCv, SuffixFCvIntSet,PrefixFCvSet,PrefixFPhenoCvSet)
@@ -272,9 +275,14 @@ else:
         os.makedirs(dirIsotonInputs+relativePathCvIntReal)
     dftranscripts.to_csv(dirIsotonInputs+relativePathCvIntReal+PrefixFCvSet+"complete"+SuffixFCvIntSet+".txt", float_format='%.0f', index=False, sep="\t")
     dfphenotypes.to_csv(dirIsotonInputs+relativePathCvIntReal+PrefixFPhenoCvSet+"complete"+SuffixFCvIntSet+".txt", float_format='%.0f', index=False, sep="\t")
-"""
-call([mathematica, '-script', binarize, dirIsotonInputs+relativePathCvIntReal,PrefixFCvSet+"*"+".txt" ])
+	
 
+#### BINARIZATION
+# Connecting to irynas account
+
+runScriptUsingSSH('iryna','youGotIt','hyssop',str(call([mathematica, '-script', binarize, dirIsotonInputs+relativePathCvIntReal,PrefixFCvSet+'*'+'.txt' ])))
+
+"""
 call([mathematica, '-script', binarize, dirIsotonInputs,nameftranscripts ])
 
 
@@ -288,17 +296,31 @@ call([mathematica, '-script', binarize, dirIsotonInputs,nameftranscripts ])
 #Call mathematica script: binarize files for cross validation
 # 
 #
-call([mathematica, '-script', binarize, dirCvIntSet,PrefixFCvSet+"*"+".txt" ])
+
 if test_set_provided == False:
     call([mathematica, '-script', binarize, dirCvTestSet,PrefixFCvSet+"*"+".txt" ])
 else:
-    call([mathematica, '-script', binarize, dirCvTestSet,"*.txt" ])
+    # This whole thing is just copying the test files in right place
+    if not os.path.exists(dirCvTestSet):
+        os.makedirs(dirCvTestSet)
+    patternTranscriptsTEST=dirIsotonInputs+"*EXPRESSION*test*.txt"
+    ftranscripts_TEST = matchNamePattern(patternTranscriptsTEST)
+    nameftranscripts_TEST=ftranscripts_TEST.rsplit('/', 1)[1]
+    
+    patternPhenotypesTEST=dirIsotonInputs+"*PHENOTYPE*test*"
+    fphenotypes_TEST=matchNamePattern(patternPhenotypesTEST)
+    namefphenotypes_TEST=fphenotypes_TEST.rsplit('/', 1)[1]
+    
+    copyfile(dirIsotonInputs+nameftranscripts_TEST,dirCvTestSet+PrefixFCvSet + '0' + SuffixFCvTestSet +'.txt')
+    copyfile(dirIsotonInputs+namefphenotypes_TEST,dirCvTestSet+PrefixFPhenoCvSet+'0'+ SuffixFCvTestSet +'.txt')
+
+
+    call([mathematica, '-script', binarize, dirCvTestSet,PrefixFCvSet+"*.txt" ])
 #
 #
 #
 
 ####End of binarize
-
 
 
 #####create real.sh file for cluster:
