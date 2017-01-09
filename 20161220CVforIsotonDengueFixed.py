@@ -291,63 +291,28 @@ if test_set_provided == True:
     
     copyfile(dirIsotonInputs+nameftranscripts_TEST,dirCvTestSet+PrefixFCvSet + 'test' + SuffixFCvTestSet +'.txt')
     copyfile(dirIsotonInputs+namefphenotypes_TEST,dirCvTestSet+PrefixFPhenoCvSet+'test'+ SuffixFCvTestSet +'.txt')
+    
+    # Remove extra expression set
+    # os.system(str('rm -rf '+dirIsotonInputs+"*EXPRESSION*test*.txt"))
+    # os.system(str('rm -rf '+dirIsotonInputs+"*PHENOTYPE*test*.txt"))
 
 
 	
 # Giving all the rights to files and folders created recently from my account
-os.system("".join(['chmod -R 777 ', str(dirShared)]))
-os.system("".join(['ls -l ', str(dirShared)]))
+# This is so to avoid problems when executing stuff from irynas account
+os.system(str('chmod -R 777 '+ dirShared))
 
 #### BINARIZATION
-# Connecting to irynas account
+# Connecting to irynas account and binarizing
+call(['sshpass','-p','youGotIt','ssh','iryna@hyssop', mathematica, '-script',binarize, dirIsotonInputs, nameftranscripts])
+call(['sshpass','-p','youGotIt','ssh','iryna@hyssop', mathematica, '-script',binarize, dirCvIntReal, PrefixFCvSet+"*"+".txt"])
+call(['sshpass','-p','youGotIt','ssh','iryna@hyssop', mathematica, '-script',binarize, dirCvTestSet, PrefixFCvSet+"*"+".txt"])
+call(['sshpass','-p','youGotIt','ssh','iryna@hyssop', mathematica, '-script',binarize, dirCvIntSet, PrefixFCvSet+"*"+".txt"])
 
-# runScriptUsingSSH('iryna','youGotIt','hyssop',str(call([mathematica, '-script', binarize, dirIsotonInputs+relativePathCvIntReal,PrefixFCvSet+'*'+'.txt' ])))
-
-print(nameftranscripts)
-call(['sshpass','-p','youGotIt','ssh','iryna@hyssop', mathematica, '-script',binarize, dirIsotonInputs+relativePathCvIntReal, PrefixFCvSet+"*"+".txt"])
-
-
-"""
-call([mathematica, '-script', binarize, dirIsotonInputs,nameftranscripts ])
-
-
-#Making files for misclassification errors' error bars
-#
-#
-#
-#End of Making files for misclassification errors' error bars  
-#
-#
-#Call mathematica script: binarize files for cross validation
-# 
-#
-
-if test_set_provided == False:
-    call([mathematica, '-script', binarize, dirCvTestSet,PrefixFCvSet+"*"+".txt" ])
-else:
-    # This whole thing is just copying the test files in right place
-    if not os.path.exists(dirCvTestSet):
-        os.makedirs(dirCvTestSet)
-    patternTranscriptsTEST=dirIsotonInputs+"*EXPRESSION*test*.txt"
-    ftranscripts_TEST = matchNamePattern(patternTranscriptsTEST)
-    nameftranscripts_TEST=ftranscripts_TEST.rsplit('/', 1)[1]
-    
-    patternPhenotypesTEST=dirIsotonInputs+"*PHENOTYPE*test*"
-    fphenotypes_TEST=matchNamePattern(patternPhenotypesTEST)
-    namefphenotypes_TEST=fphenotypes_TEST.rsplit('/', 1)[1]
-    
-    copyfile(dirIsotonInputs+nameftranscripts_TEST,dirCvTestSet+PrefixFCvSet + '0' + SuffixFCvTestSet +'.txt')
-    copyfile(dirIsotonInputs+namefphenotypes_TEST,dirCvTestSet+PrefixFPhenoCvSet+'0'+ SuffixFCvTestSet +'.txt')
-
-
-    call([mathematica, '-script', binarize, dirCvTestSet,PrefixFCvSet+"*.txt" ])
-#
-#
-#
 
 ####End of binarize
 
-
+"""
 #####create real.sh file for cluster:
 call([mathematica , '-script', binarize, dirIsotonInputs, nameftranscripts ]) # '/Users/benno/dev/mmatest/test.ma'])
 
