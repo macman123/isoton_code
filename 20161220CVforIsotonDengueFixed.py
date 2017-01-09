@@ -38,7 +38,7 @@ if test_set_provided == True:
 
 isoton="/home/macman/isotonic_regression/201607_isoton/201607_isoton"
 mathematica='math' #'/Applications/Mathematica.app/Contents/MacOS/MathKernel'
-binarize='writeBinaryData_iryna_17jun16.m' #dirShared+'code/writeBinaryData_iryna_17jun16.m'
+binarize='/home/iryna/isotonic_regression/code/writeBinaryData_iryna_17jun16.m' #dirShared+'code/writeBinaryData_iryna_17jun16.m'
 
 
 dirIsotonOutputs = dirShared + "isotonicResults/"
@@ -171,7 +171,7 @@ def runScriptUsingSSH(usrname,pswd, machine, commandToLaunchScript):
     print ("Stdout: ", stdout_output)
     stderr_output = stderr.read().decode('utf8').rstrip('\n')
     print ("Stderr: ", stderr_output)
-    assert (exit_status == 0), "While executing "+fScript+", qsub generated the non-zero exit status: "+str(exit_status)
+    assert (exit_status == 0), "While executing "+str(commandToLaunchScript)+", qsub generated the non-zero exit status: "+str(exit_status)
     return exit_status
 
 def runScriptFileOnSpice(usrname,pswd,fScript):
@@ -275,12 +275,37 @@ else:
         os.makedirs(dirIsotonInputs+relativePathCvIntReal)
     dftranscripts.to_csv(dirIsotonInputs+relativePathCvIntReal+PrefixFCvSet+"complete"+SuffixFCvIntSet+".txt", float_format='%.0f', index=False, sep="\t")
     dfphenotypes.to_csv(dirIsotonInputs+relativePathCvIntReal+PrefixFPhenoCvSet+"complete"+SuffixFCvIntSet+".txt", float_format='%.0f', index=False, sep="\t")
+
+
+if test_set_provided == True:    
+    # This whole thing is just copying the test files in right place
+    if not os.path.exists(dirCvTestSet):
+        os.makedirs(dirCvTestSet)
+    patternTranscriptsTEST=dirIsotonInputs+"*EXPRESSION*test*.txt"
+    ftranscripts_TEST = matchNamePattern(patternTranscriptsTEST)
+    nameftranscripts_TEST=ftranscripts_TEST.rsplit('/', 1)[1]
+    
+    patternPhenotypesTEST=dirIsotonInputs+"*PHENOTYPE*test*"
+    fphenotypes_TEST=matchNamePattern(patternPhenotypesTEST)
+    namefphenotypes_TEST=fphenotypes_TEST.rsplit('/', 1)[1]
+    
+    copyfile(dirIsotonInputs+nameftranscripts_TEST,dirCvTestSet+PrefixFCvSet + 'test' + SuffixFCvTestSet +'.txt')
+    copyfile(dirIsotonInputs+namefphenotypes_TEST,dirCvTestSet+PrefixFPhenoCvSet+'test'+ SuffixFCvTestSet +'.txt')
+
+
 	
+# Giving all the rights to files and folders created recently from my account
+os.system("".join(['chmod -R 777 ', str(dirShared)]))
+os.system("".join(['ls -l ', str(dirShared)]))
 
 #### BINARIZATION
 # Connecting to irynas account
 
-runScriptUsingSSH('iryna','youGotIt','hyssop',str(call([mathematica, '-script', binarize, dirIsotonInputs+relativePathCvIntReal,PrefixFCvSet+'*'+'.txt' ])))
+# runScriptUsingSSH('iryna','youGotIt','hyssop',str(call([mathematica, '-script', binarize, dirIsotonInputs+relativePathCvIntReal,PrefixFCvSet+'*'+'.txt' ])))
+
+print(nameftranscripts)
+call(['sshpass','-p','youGotIt','ssh','iryna@hyssop', mathematica, '-script',binarize, dirIsotonInputs+relativePathCvIntReal, PrefixFCvSet+"*"+".txt"])
+
 
 """
 call([mathematica, '-script', binarize, dirIsotonInputs,nameftranscripts ])
